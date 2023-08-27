@@ -1,5 +1,5 @@
 [package]
-name = "pi-rust"
+name = "pi_rust"
 version = "0.1.0"
 edition = "2021"
 authors = ["Arpad Palinkas <arpad.palinkas@gmail.com>"]
@@ -17,3 +17,7 @@ serde_json = "1.0.105"
 reqwest = { version = "0.11.18", features = ["json"] }
 tokio = { version = "1.32.0", features = ["full"] }
 anyhow = "1.0.75"
+
+[dev-dependencies]
+dotenvy = "0.15.7"
+tokio  = { version = "1.32.0", features = ["full"] }

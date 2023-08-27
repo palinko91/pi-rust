@@ -1,9 +1,9 @@
-mod types;
-use reqwest::{header, Client};
+pub mod types;
+use reqwest::{header, Client, StatusCode};
 use serde_json::{json, Value};
 use std::str::FromStr;
 use stellar_base::{
-    amount::{Stroops, Amount},
+    amount::{Amount, Stroops},
     asset::Asset,
     crypto::MuxedAccount,
     memo::Memo,
@@ -34,16 +34,25 @@ fn get_reqwest_client(api_key: String) -> Client {
     client
 }
 
+pub struct PiNetwork {
+    pub api_key: String,
+    pub my_key_pair: Keypair,
+    pub network_passphrase: Option<NetworkPassphrase>,
+    pub current_payment: Option<PaymentDTO>,
+    pub reqwest_options: Option<ReqwestClientOptions>,
+}
+
 impl PiNetwork {
     // Creating new PiNetwork struct for the crate's user
     pub fn new(
         api_key: String,
-        wallet_private_seed: &str,
+        wallet_private_seed: String,
+        network_passphrase: Option<NetworkPassphrase>,
         options: Option<ReqwestClientOptions>,
     ) -> Result<Self, PiError> {
         // Validating the seed format for common errors if erroring out returning error for the new function otherwise we continue the code
-        Self::validate_seed_format(wallet_private_seed)?;
-        let my_key_pair = Keypair::from_secret_key(wallet_private_seed);
+        Self::validate_seed_format(&wallet_private_seed)?;
+        let my_key_pair = Keypair::from_secret_key(&wallet_private_seed);
 
         // Matching if everything went ok then we are returning struct if the key pair generation errored then we returning that error
         match my_key_pair {
@@ -51,7 +60,7 @@ impl PiNetwork {
                 return Ok(PiNetwork {
                     api_key,
                     my_key_pair,
-                    network_passphrase: None,
+                    network_passphrase,
                     current_payment: None,
                     reqwest_options: options,
                 })
@@ -68,17 +77,22 @@ impl PiNetwork {
             Some(options) => options.base_url.clone(),
             None => "https://api.minepi.com".to_string(),
         };
+
         let response = client
             .post(format!("{url}/v2/payments"))
             .json(&body)
             .send()
             .await?;
 
-        let response_data: Value = response.json().await?;
-        let payment_dto: PaymentDTO = serde_json::from_value(response_data.clone())?;
-        self.current_payment = Some(payment_dto.clone());
+        if response.status() == StatusCode::OK {
+            let response_data: Value = response.json().await?;
+            let payment_dto: PaymentDTO = serde_json::from_value(response_data.clone())?;
+            self.current_payment = Some(payment_dto.clone());
 
-        Ok(payment_dto.identifier)
+            Ok(payment_dto.identifier)
+        } else {
+            Err(PiError::Message(format!("Error, message from API: {:?}", response.text().await)))
+        }
     }
 
     // You can submit the payment to the Pi Blockchain using submit_payment method. This method builds a payment transaction and submits it to the Pi Blockchain for you. Once submitted, the method returns a transaction identifier (txid).
@@ -101,7 +115,7 @@ impl PiNetwork {
             let from_address = payment.from_address.clone();
             let to_address = payment.to_address.clone();
             let network = payment.network.clone();
-    
+
             let pi_horizon = PiNetwork::get_horizon_client(network).await;
 
             let transaction_data = TransactionData {
@@ -139,11 +153,15 @@ impl PiNetwork {
             .send()
             .await?;
 
-        let response_data: Value = response.json().await?;
-        let payment_dto: PaymentDTO = serde_json::from_value(response_data.clone())?;
-        self.current_payment = None;
+        if response.status() == StatusCode::OK {
+            let response_data: Value = response.json().await?;
+            let payment_dto: PaymentDTO = serde_json::from_value(response_data.clone())?;
+            self.current_payment = None;
 
-        Ok(payment_dto)
+            Ok(payment_dto)
+        } else {
+            Err(PiError::Message(format!("Error, message from API: {:?}", response.text().await)))
+        }
     }
 
     // This method returns a payment object if it exists.
@@ -158,10 +176,14 @@ impl PiNetwork {
             .send()
             .await?;
 
-        let response_data: Value = response.json().await?;
-        let payment: PaymentDTO = serde_json::from_value(response_data)?;
+        if response.status() == StatusCode::OK {
+            let response_data: Value = response.json().await?;
+            let payment: PaymentDTO = serde_json::from_value(response_data)?;
 
-        Ok(payment)
+            Ok(payment)
+        } else {
+            Err(PiError::Message(format!("Error, message from API: {:?}", response.text().await)))
+        }
     }
 
     // This method cancels the payment in the Pi server.
@@ -176,10 +198,14 @@ impl PiNetwork {
             .send()
             .await?;
 
-        let response_data: Value = response.json().await?;
-        let cancelled_payment: PaymentDTO = serde_json::from_value(response_data)?;
+        if response.status() == StatusCode::OK {
+            let response_data: Value = response.json().await?;
+            let cancelled_payment: PaymentDTO = serde_json::from_value(response_data)?;
 
-        Ok(cancelled_payment)
+            Ok(cancelled_payment)
+        } else {
+            Err(PiError::Message(format!("Error, message from API: {:?}", response.text().await)))
+        }
     }
 
     // This method returns the latest incomplete payment which your app has created, if present. Use this method to troubleshoot the following error: "You need to complete the ongoing payment first to create a new one."
@@ -200,12 +226,17 @@ impl PiNetwork {
             .get(format!("{url}/v2/payments/incomplete_server_payments"))
             .send()
             .await?;
-        let response_data: Value = response.json().await?;
-        let payment_vec: Vec<PaymentDTO> = serde_json::from_value(response_data)?;
-        Ok(payment_vec)
+
+        if response.status() == StatusCode::OK {
+            let response_data: IncompletePaymentResponse = response.json().await?;
+            let payment_vec: Vec<PaymentDTO> = response_data.incomplete_server_payments;
+            Ok(payment_vec)
+        } else {
+            Err(PiError::Message(format!("Error, message from API: {:?}", response.text().await)))
+        }
     }
 
-    fn validate_seed_format(seed: &str) -> Result<(), PiError> {
+    pub fn validate_seed_format(seed: &str) -> Result<(), PiError> {
         if !seed.starts_with("S") {
             return Err(PiError::Message(
                 "Wallet private seed must start with 'S'".to_string(),
@@ -257,7 +288,8 @@ impl PiNetwork {
             Ok(account) => account.into(),
             Err(e) => {
                 return Err(PiError::Message(format!(
-                    "Can't make muxed account from the given account ID! {:?}", e
+                    "Can't make muxed account from the given account ID! {:?}",
+                    e
                 )));
             }
         };
@@ -272,15 +304,11 @@ impl PiNetwork {
 
         let sequence = my_account.sequence.clone().parse::<i64>().unwrap() + 1; // Getting the current sequence of the account and adding 1 to it
 
-        let mut transaction = Transaction::builder(
-            muxed_account,
-            sequence,
-            base_fee,
-        )
-        .with_memo(Memo::Text(transaction_data.payment_identifier.clone()))
-        .add_operation(payment_operation)
-        .into_transaction()
-        .unwrap();
+        let mut transaction = Transaction::builder(muxed_account, sequence, base_fee)
+            .with_memo(Memo::Text(transaction_data.payment_identifier.clone()))
+            .add_operation(payment_operation)
+            .into_transaction()
+            .unwrap();
 
         // If the user gave us the network passphrase we are using that if he not then going with testnet as default
         let network_passphrase_enum: NetworkPassphrase = match &self.network_passphrase {

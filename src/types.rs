@@ -1,15 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use stellar_sdk::Keypair;
 use std::num::ParseIntError;
-
-pub struct PiNetwork {
-    pub api_key: String,
-    pub my_key_pair: Keypair,
-    pub network_passphrase: Option<NetworkPassphrase>,
-    pub current_payment: Option<PaymentDTO>,
-    pub reqwest_options: Option<ReqwestClientOptions>,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PaymentArgs {
@@ -74,6 +65,11 @@ pub enum Direction {
 pub enum NetworkPassphrase {
     PiNetwork,
     PiTestnet,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct IncompletePaymentResponse {
+    pub incomplete_server_payments: Vec<PaymentDTO>,
 }
 
 #[derive(Debug)]
