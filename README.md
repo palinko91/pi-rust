@@ -134,7 +134,7 @@ This method creates a payment transaction and submits it to the Pi Blockchain.
 - Required parameter: `payment_id`
 - Return value: `a transaction identifier (txid: String)`
 
-### `completePayment`
+### `complete_payment`
 
 This method completes the payment in the Pi server.
 
