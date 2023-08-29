@@ -9,9 +9,9 @@ use stellar_base::{
     memo::Memo,
     operations::Operation,
     transaction::Transaction,
-    Network, PublicKey,
+    Network, PublicKey, KeyPair,
 };
-use stellar_sdk::{Keypair, Server};
+use stellar_sdk::{Keypair, Server, types::Account};
 use types::*;
 
 fn get_reqwest_client(api_key: String) -> Client {
@@ -124,10 +124,13 @@ impl PiNetwork {
                 from_address,
                 to_address,
             };
+
             let transaction = self
                 .build_a2u_transaction(pi_horizon.clone(), transaction_data)
                 .await?;
+
             let txid = PiNetwork::submit_transaction(pi_horizon.clone(), transaction).await?;
+
             self.current_payment = None;
             Ok(txid)
         } else {
@@ -142,14 +145,12 @@ impl PiNetwork {
         tx_id: String,
     ) -> Result<PaymentDTO, PiError> {
         let client = get_reqwest_client(self.api_key.clone());
-        let body = json!(tx_id);
         let url = match &self.reqwest_options {
             Some(options) => options.base_url.clone(),
             None => "https://api.minepi.com".to_string(),
         };
         let response = client
-            .post(format!("{url}/v2/payments/${payment_id}/complete"))
-            .json(&body)
+            .post(format!("{url}/v2/payments/{payment_id}/complete?txid={tx_id}"))
             .send()
             .await?;
 
@@ -172,7 +173,7 @@ impl PiNetwork {
             None => "https://api.minepi.com".to_string(),
         };
         let response = client
-            .get(format!("{url}/v2/payments/${payment_id}"))
+            .get(format!("{url}/v2/payments/{payment_id}"))
             .send()
             .await?;
 
@@ -187,22 +188,21 @@ impl PiNetwork {
     }
 
     // This method cancels the payment in the Pi server.
-    pub async fn cancel_payment(&mut self, payment_id: String) -> Result<PaymentDTO, PiError> {
+    pub async fn cancel_payment(&mut self, payment_id: String) -> Result<PaymentDTO, PiError> 
+    {
         let client = get_reqwest_client(self.api_key.clone());
         let url = match &self.reqwest_options {
             Some(options) => options.base_url.clone(),
             None => "https://api.minepi.com".to_string(),
         };
         let response = client
-            .get(format!("{url}/v2/payments/${payment_id}/cancel"))
+            .post(format!("{url}/v2/payments/{payment_id}/cancel"))
             .send()
-            .await?;
+            .await.unwrap();
 
         if response.status() == StatusCode::OK {
-            let response_data: Value = response.json().await?;
-            let cancelled_payment: PaymentDTO = serde_json::from_value(response_data)?;
-
-            Ok(cancelled_payment)
+            let response_data: PaymentDTO = response.json().await?;
+            Ok(response_data)
         } else {
             Err(PiError::Message(format!("Error, message from API: {:?}", response.text().await)))
         }
@@ -258,10 +258,10 @@ impl PiNetwork {
         Server::new(server_url, None).unwrap()
     }
 
-    async fn get_network_string(network: NetworkPassphrase) -> String {
+    async fn get_network_passphrase(network: NetworkPassphrase) -> String {
         let server_url = match network {
-            NetworkPassphrase::PiNetwork => "https://api.mainnet.minepi.com".to_string(),
-            NetworkPassphrase::PiTestnet => "https://api.testnet.minepi.com".to_string(),
+            NetworkPassphrase::PiNetwork => "Pi Network".to_string(),
+            NetworkPassphrase::PiTestnet => "Pi Testnet".to_string(),
         };
         server_url
     }
@@ -277,39 +277,43 @@ impl PiNetwork {
             ));
         }
 
-        let my_account = pi_horizon.load_account(&self.my_key_pair.public_key())?;
+        let my_account: Account = pi_horizon.load_account(&self.my_key_pair.public_key())?;
         let base_fee_string = pi_horizon.fetch_base_fee()?;
         let base_fee_i64 = base_fee_string.parse::<i64>()?;
         let base_fee = Stroops::new(base_fee_i64);
 
         let amount_str = transaction_data.amount.clone().to_string();
-        let muxed_account_pkey = PublicKey::from_account_id(&transaction_data.to_address.clone());
-        let muxed_account: MuxedAccount = match muxed_account_pkey {
+        let destination_account_public_key = PublicKey::from_account_id(&transaction_data.to_address.clone());
+        let destination_account_muxed: MuxedAccount = match destination_account_public_key {
             Ok(account) => account.into(),
             Err(e) => {
                 return Err(PiError::Message(format!(
-                    "Can't make muxed account from the given account ID! {:?}",
+                    "Can't make muxed account from the given destination account ID! {:?}",
                     e
                 )));
             }
         };
-
+        
         let payment_operation = Operation::new_payment()
-            .with_destination(muxed_account.clone())
+            .with_destination(destination_account_muxed.clone())
             .with_amount(Amount::from_str(&amount_str).unwrap())
             .unwrap()
             .with_asset(Asset::new_native())
             .build()
             .unwrap();
-
+       
         let sequence = my_account.sequence.clone().parse::<i64>().unwrap() + 1; // Getting the current sequence of the account and adding 1 to it
 
-        let mut transaction = Transaction::builder(muxed_account, sequence, base_fee)
+        let source_account_keypair: KeyPair = self.my_key_pair.clone().into();
+        let source_account_public_key = source_account_keypair.public_key();
+        let source_account_muxed: MuxedAccount = source_account_public_key.clone().into();
+       
+        let mut transaction = Transaction::builder(source_account_muxed, sequence, base_fee)
             .with_memo(Memo::Text(transaction_data.payment_identifier.clone()))
             .add_operation(payment_operation)
             .into_transaction()
             .unwrap();
-
+      
         // If the user gave us the network passphrase we are using that if he not then going with testnet as default
         let network_passphrase_enum: NetworkPassphrase = match &self.network_passphrase {
             Some(passphrase) => passphrase.clone(),
@@ -318,8 +322,8 @@ impl PiNetwork {
 
         // Signing the transaction
         let _ = transaction.sign(
-            &self.my_key_pair.clone().into(),
-            &Network::new(PiNetwork::get_network_string(network_passphrase_enum).await),
+            &source_account_keypair,
+            &Network::new(PiNetwork::get_network_passphrase(network_passphrase_enum).await),
         );
         Ok(transaction)
     }

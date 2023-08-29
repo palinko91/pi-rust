@@ -57,13 +57,17 @@ pub struct ReqwestClientOptions {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Direction {
+    #[serde(rename = "user_to_app")]
     UserToApp,
+    #[serde(rename = "app_to_user")]
     AppToUser,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum NetworkPassphrase {
+    #[serde(rename = "Pi Network")]
     PiNetwork,
+    #[serde(rename = "Pi Testnet")]
     PiTestnet,
 }
 
