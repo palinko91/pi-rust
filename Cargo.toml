@@ -9,7 +9,7 @@ homepage = "https://github.com/palinko91/pi-rust"
 documentation = "https://github.com/palinko91/pi-rust"
 repository = "https://github.com/palinko91/pi-rust"
 readme = "README.md"
-keywords = ["pi", "pi network", "backend", "crypto", "token"]
+keywords = ["pi", "pinetwork", "backend", "crypto", "token"]
 categories = ["sdk"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
