@@ -1,5 +1,5 @@
 //! 1. Initialize the SDK
-//! ```rust
+//! ```
 //! use pi_rust::{PiNetwork, types::{ReqwestClientOptions, NetworkPassphrase}};
 //! 
 //! dotenvy::dotenv().expect("Failed to load the env file");
@@ -11,7 +11,7 @@
 //! // If you need mainnet do this
 //! // use pi_rust::{types::NetworkPassphrase, PiNetwork};
 //! // let pi = PiNetwork::new(pi_api_key, wallet_private_seed, Some(NetworkPassphrase::PiNetwork), None).unwrap();
-//! // ReqwestClientOptions can be set also like Some(ReqwestClientOptions{base_url:"String".to_String()})
+//! // ReqwestClientOptions can be set also like Some(ReqwestClientOptions{base_url:"String".to_string()})
 //! let pi = PiNetwork::new(pi_api_key, wallet_private_seed, None, None).unwrap();
 //! ```
 //! 
@@ -24,12 +24,12 @@
 //! | :---: | :---: | :---: | :---: | :---: | :---: |
 //! | `userUid` | apple-pie-1 | 3.14 | Refund for apple pie | NULL | NULL |
 //! 
-//! ```rust
+//! ```
 //! //  Get the user_uid from the Frontend
-//! let user_uid = "user_uid_of_your_app".to_String();
+//! let user_uid = "user_uid_of_your_app".to_string();
 //! let payment_data = PaymentArgs {
 //!   amount: 1.0,
-//!   memo: "Refund for apple pie".to_String(), // this is just an example
+//!   memo: "Refund for apple pie".to_string(), // this is just an example
 //!   metadata: json!({productId: "apple-pie-1"}),
 //!   uid: user_uid
 //! };
@@ -47,7 +47,7 @@
 //! | `userUid` | apple-pie-1 | 3.14 | Refund for apple pie | `payment_id` | NULL |
 //! 
 //! 4. Submit the payment to the Pi Blockchain
-//! ```rust
+//! ```
 //! // It is strongly recommended that you store the txid along with the payment_id you stored earlier for your reference.
 //! let txid = pi.submit_payment(payment_id).await;
 //! ```
@@ -61,7 +61,7 @@
 //! | `userUid` | apple-pie-1 | 3.14 | Refund for apple pie | `payment_id` | `txid` |
 //! 
 //! 6. Complete the payment
-//! ```rust
+//! ```
 //! let completed_payment = pi.complete_payment(payment_id, txid).await;
 //! ```
 //! 
@@ -97,7 +97,7 @@
 //! - Required parameter: `PaymentArgs`
 //! 
 //! You need to provide 4 different data and pass them as a single object to this method.
-//! ```rust
+//! ```
 //! #[derive(Debug, Clone, Serialize, Deserialize)]
 //! pub struct PaymentArgs {
 //!     pub amount: f64, // the amount of Pi you're paying to your user, always decimal so if 1 Pi then 1.0 should be entered
@@ -125,7 +125,7 @@
 //! 
 //! The method return a payment struct with the following fields:
 //! 
-//! ```rust
+//! ```
 //! #[derive(Debug, Clone, Serialize, Deserialize)]
 //! pub struct PaymentDTO {
 //!   // Payment data:

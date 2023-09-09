@@ -15,7 +15,7 @@ categories = ["sdk"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-stellar_sdk = { git = "https://github.com/palinko91/stellar-sdk.git", branch = "master" }
+stellar_sdk = { git = "https://github.com/palinko91/stellar-sdk.git", branch = "master", version = "=0.1.4" }
 stellar-base = "=0.5.0"
 sodiumoxide = "=0.2.6"
 serde = "=1.0.183"

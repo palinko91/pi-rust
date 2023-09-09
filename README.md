@@ -8,10 +8,10 @@ Install this package as a dependency of your app:
 
 ```shell
 # With cargo:
-cargo add pi_rust # Not added to cargo yet!
+cargo add pi_rust
 
 # With toml file:
-pi_rust = { git = "https://github.com/palinko91/pi-rust.git", branch = "master" }
+pi_rust = "0.1.0"
 ```
 
 ## Example
@@ -29,7 +29,7 @@ let wallet_private_seed: String = env::var("WALLET_PRIVATE_SEED").expect("WALLET
 // If you need mainnet do this
 // use pi_rust::{types::NetworkPassphrase, PiNetwork};
 // let pi = PiNetwork::new(pi_api_key, wallet_private_seed, Some(NetworkPassphrase::PiNetwork), None).unwrap();
-// ReqwestClientOptions can be set also like Some(ReqwestClientOptions{base_url:"String".to_String()})
+// ReqwestClientOptions can be set also like Some(ReqwestClientOptions{base_url:"String".to_string()})
 let pi = PiNetwork::new(pi_api_key, wallet_private_seed, None, None).unwrap();
 ```
 
@@ -44,10 +44,10 @@ Consider this a database table example.
 
 ```rust
 //  Get the user_uid from the Frontend
-let user_uid = "user_uid_of_your_app".to_String();
+let user_uid = "user_uid_of_your_app".to_string();
 let payment_data = PaymentArgs {
   amount: 1.0,
-  memo: "Refund for apple pie".to_String(), // this is just an example
+  memo: "Refund for apple pie".to_string(), // this is just an example
   metadata: json!({productId: "apple-pie-1"}),
   uid: user_uid
 };
