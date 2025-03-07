@@ -198,7 +198,6 @@
 //! See documentation for the `get_incomplete_server_payments` above.
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-pub mod stellar_sdk;
 pub mod types;
 use reqwest::{header, Client, StatusCode};
 use serde_json::{json, Value};
@@ -212,7 +211,7 @@ use stellar_base::{
     transaction::Transaction,
     Network, PublicKey, KeyPair,
 };
-use stellar_sdk::{types::Account, lib::{Keypair, Server}};
+use stellar_sdk::{types::Account, Keypair, Server};
 use types::*;
 
 /// Creating the reqwest client for the api call with the necessary header authentication
@@ -357,6 +356,7 @@ impl PiNetwork {
         };
         let response = client
             .post(format!("{url}/v2/payments/{payment_id}/complete?txid={tx_id}"))
+            .body("{}")
             .send()
             .await?;
 
@@ -380,6 +380,7 @@ impl PiNetwork {
         };
         let response = client
             .get(format!("{url}/v2/payments/{payment_id}"))
+            .body("{}")
             .send()
             .await?;
 
@@ -403,6 +404,7 @@ impl PiNetwork {
         };
         let response = client
             .post(format!("{url}/v2/payments/{payment_id}/cancel"))
+            .body("{}")
             .send()
             .await.unwrap();
 
@@ -430,6 +432,7 @@ impl PiNetwork {
         };
         let response = client
             .get(format!("{url}/v2/payments/incomplete_server_payments"))
+            .body("{}")
             .send()
             .await?;
 

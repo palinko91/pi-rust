@@ -18,6 +18,8 @@ mod tests {
         let mut pi = setup();
 
         let user_uid = env::var("USER_ID").expect("USER_ID must be set");
+
+        println!("Complete payment test");
         let payment_data = PaymentArgs {
         amount: 0.1,
         memo: "Refund for apple pie".to_string(),
@@ -31,13 +33,15 @@ mod tests {
 
         assert_eq!(complete_payment.identifier, payment_id);
 
+        println!("Cancel payment test");
         let payment_id2 = pi.create_payment(payment_data.clone()).await.unwrap();
 
-        let get_payment2 = pi.get_payment(payment_id2.clone()).await.unwrap();
+        let get_payment2 = pi.get_payment(payment_id2.clone().to_string()).await.unwrap();
 
         let cancel_payment2 = pi.cancel_payment(payment_id2).await.unwrap();
         assert_eq!(get_payment2.identifier, cancel_payment2.identifier);
 
+        println!("Looking for incomplete payment");
         let payment_data2 = PaymentArgs {
             amount: 2.1,
             memo: "Refund for apple pie".to_string(),
@@ -62,11 +66,14 @@ mod tests {
         let seed_valid = "SAFPHSUDCR3UUQX36MMRXJZBVZNKFP5OFOZSOLUWTT76QQUPKUUFNRNW";
         let seed_not_s = "WAFPHSUDCR3UUQX36MMRXJZBVZNKFP5OFOZSOLUWTT76QQUPKUUFNRNS";
         let seed_too_long = "SAFPHSUDCR3UUQX36MMRXJZBVZNKFP5OFOZSOLUWTT76QQUPKUUFNRNWG";
+        let seed_too_short = "SAFPHSUDCR3UUQX36MMRXJZBVZNKFP5OFOZSOLUWTT76QQUPKUUFNR";
         let result_ok = PiNetwork::validate_seed_format(seed_valid);
         let result_err_not_s = PiNetwork::validate_seed_format(seed_not_s);
         let result_err_too_long = PiNetwork::validate_seed_format(seed_too_long);
+        let result_err_too_short = PiNetwork::validate_seed_format(seed_too_short);
         assert_eq!(true, result_ok.is_ok());
         assert_eq!(true, result_err_not_s.is_err());
         assert_eq!(true, result_err_too_long.is_err());
+        assert_eq!(true, result_err_too_short.is_err());
     }
 }
