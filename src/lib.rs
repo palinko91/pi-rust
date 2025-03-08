@@ -1,9 +1,9 @@
 //! 1. Initialize the SDK
 //! ```ignore
 //! use pi_rust::{PiNetwork, types::{ReqwestClientOptions, NetworkPassphrase}};
-//! 
+//!
 //! dotenvy::dotenv().expect("Failed to load the env file");
-//! 
+//!
 //! // DO NOT expose these values to public
 //! let pi_api_key: String = env::var("PI_API_KEY").expect("PI_API_KEY must be set");
 //! let wallet_private_seed: String = env::var("WALLET_PRIVATE_SEED").expect("WALLET_PRIVATE_SEED must be set"); // starts with S
@@ -14,16 +14,16 @@
 //! // ReqwestClientOptions can be set also like Some(ReqwestClientOptions{base_url:"String".to_string()})
 //! let pi = PiNetwork::new(pi_api_key, wallet_private_seed, None, None).unwrap();
 //! ```
-//! 
+//!
 //! 2. Create an A2U payment
-//! 
+//!
 //! Make sure to store your payment data in your database. Here's an example of how you could keep track of the data.
 //! Consider this a database table example.
-//! 
+//!
 //! | uid | product_id | amount | memo | payment_id | txid |
 //! | :---: | :---: | :---: | :---: | :---: | :---: |
 //! | `userUid` | apple-pie-1 | 3.14 | Refund for apple pie | NULL | NULL |
-//! 
+//!
 //! ```ignore
 //! //  Get the user_uid from the Frontend
 //! let user_uid = "user_uid_of_your_app".to_string();
@@ -37,65 +37,65 @@
 //! // so that you don't double-pay the same user, by keeping track of the payment.
 //! let payment_id = pi.create_payment(payment_data).await;
 //! ```
-//! 
+//!
 //! 3. Store the `payment_id` in your database
-//! 
+//!
 //! After creating the payment, you'll get `payment_id`, which you should be storing in your database.
-//! 
+//!
 //! | uid | product_id | amount | memo | payment_id | txid |
 //! | :---: | :---: | :---: | :---: | :---: | :---: |
 //! | `userUid` | apple-pie-1 | 3.14 | Refund for apple pie | `payment_id` | NULL |
-//! 
+//!
 //! 4. Submit the payment to the Pi Blockchain
 //! ```ignore
 //! // It is strongly recommended that you store the txid along with the payment_id you stored earlier for your reference.
 //! let txid = pi.submit_payment(payment_id).await;
 //! ```
-//! 
+//!
 //! 5. Store the txid in your database
-//! 
+//!
 //! Similarly as you did in step 3, keep the txid along with other data.
-//! 
+//!
 //! | uid | product_id | amount | memo | payment_id | txid |
 //! | :---: | :---: | :---: | :---: | :---: | :---: |
 //! | `userUid` | apple-pie-1 | 3.14 | Refund for apple pie | `payment_id` | `txid` |
-//! 
+//!
 //! 6. Complete the payment
 //! ```ignore
 //! let completed_payment = pi.complete_payment(payment_id, txid).await;
 //! ```
-//! 
+//!
 //! ## Overall flow for A2U (App-to-User) payment
-//! 
+//!
 //! To create an A2U payment using the Pi Rust SDK, here's an overall flow you need to follow:
-//! 
+//!
 //! 1. Initialize the SDK
 //! > You'll be initializing the SDK with the Pi API Key of your app and the Private Seed of your app wallet, the network passphrase and the request url if needed.
-//! 
+//!
 //! 2. Create an A2U payment
 //! > You can create an A2U payment using `create_payment` method. This method returns a payment identifier (payment id).
-//! 
+//!
 //! 3. Store the payment id in your database
 //! > It is critical that you store the payment id, returned by `create_payment` method, in your database so that you don't double-pay the same user, by keeping track of the payment.
-//! 
+//!
 //! 4. Submit the payment to the Pi Blockchain
 //! > You can submit the payment to the Pi Blockchain using `submit_payment` method. This method builds a payment transaction and submits it to the Pi Blockchain for you. Once submitted, the method returns a transaction identifier (txid).
-//! 
+//!
 //! 5. Store the txid in your database
 //! > It is strongly recommended that you store the txid along with the payment id you stored earlier for your reference.
-//! 
+//!
 //! 6. Complete the payment
 //! > After checking the transaction with the txid you obtained, you must complete the payment, which you can do with `complete_payment` method. Upon completing, the method returns the payment object. Check the `status` field to make sure everything looks correct.
-//! 
+//!
 //! ## SDK Reference
-//! 
+//!
 //! This section shows you a list of available methods.
 //! ### `create_payment`
-//! 
+//!
 //! This method creates an A2U payment.
-//! 
+//!
 //! - Required parameter: `PaymentArgs`
-//! 
+//!
 //! You need to provide 4 different data and pass them as a single object to this method.
 //! ```ignore
 //! #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -106,25 +106,25 @@
 //!     pub uid: String, // a user uid of your app. You should have access to this value if a user has authenticated on your app.
 //! }
 //! ```
-//! 
+//!
 //! - Return value: `a payment identifier (payment_id: String)`
-//! 
+//!
 //! ### `submit_payment`
-//! 
+//!
 //! This method creates a payment transaction and submits it to the Pi Blockchain.
-//! 
+//!
 //! - Required parameter: `payment_id`
 //! - Return value: `a transaction identifier (txid: String)`
-//! 
+//!
 //! ### `complete_payment`
-//! 
+//!
 //! This method completes the payment in the Pi server.
-//! 
+//!
 //! - Required parameter: `payment_id, txid`
 //! - Return value: `a payment object (payment: PaymentDTO)`
-//! 
+//!
 //! The method return a payment struct with the following fields:
-//! 
+//!
 //! ```ignore
 //! #[derive(Debug, Clone, Serialize, Deserialize)]
 //! pub struct PaymentDTO {
@@ -142,7 +142,7 @@
 //!     pub created_at: String, // payment's creation timestamp
 //!     pub network: NetworkPassphrase, // a network of the payment ("Pi Network" | "Pi Testnet")
 //! }
-//! 
+//!
 //! #[derive(Debug, Clone, Serialize, Deserialize)]
 //! pub struct PaymentDTOStatus {
 //!     pub developer_approved: bool, // Server-Side Approval (automatically approved for A2U payment)
@@ -151,7 +151,7 @@
 //!     pub cancelled: bool, // cancelled by the developer or by Pi Network
 //!     pub user_cancelled: bool, // cancelled by the user
 //! }
-//! 
+//!
 //! #[derive(Debug, Clone, Serialize, Deserialize)]
 //! pub struct PaymentDTOTransaction {
 //!     pub txid: String, // id of the blockchain transaction
@@ -159,42 +159,42 @@
 //!     pub _link: String, // a link to the operation on the Pi Blockchain API
 //! }
 //! ```
-//! 
+//!
 //! ### `get_payment`
-//! 
+//!
 //! This method returns a payment object if it exists.
-//! 
+//!
 //! - Required parameter: `payment_id`
 //! - Return value: `a payment object (payment: PaymentDTO)`
-//! 
+//!
 //! ### `cancel_payment`
-//! 
+//!
 //! This method cancels the payment in the Pi server.
-//! 
+//!
 //! - Required parameter: `payment_id`
 //! - Return value: `a payment object (payment: PaymentDTO)`
-//! 
+//!
 //! ### `get_incomplete_server_payments`
-//! 
+//!
 //! This method returns the latest incomplete payment which your app has created, if present. Use this method to troubleshoot the following error: "You need to complete the ongoing payment first to create a new one."
-//! 
+//!
 //! - Required parameter: `nothing`
 //! - Return value: `a vector which contains 0 or 1 payment object (payments: Vec<PaymentDTO>)`
-//! 
+//!
 //! If a payment is returned by this method, you must follow one of the following 3 options:
-//! 
+//!
 //! 1. cancel the payment, if it is not linked with a blockchain transaction and you don't want to submit the transaction anymore
-//! 
+//!
 //! 2. submit the transaction and complete the payment
-//! 
+//!
 //! 3. if a blockchain transaction has been made, complete the payment
-//! 
+//!
 //! If you do not know what this payment maps to in your business logic, you may use its `metadata` property to retrieve which business logic item it relates to. Remember that `metadata` is a required argument when creating a payment, and should be used as a way to link this payment to an item of your business logic.
-//! 
+//!
 //! ## Troubleshooting
-//! 
+//!
 //! ### Error when creating a payment: "You need to complete the ongoing payment first to create a new one."
-//! 
+//!
 //! See documentation for the `get_incomplete_server_payments` above.
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -206,10 +206,11 @@ use stellar_base::{
     amount::{Amount, Stroops},
     asset::Asset,
     crypto::MuxedAccount,
+    crypto::SodiumKeyPair,
     memo::Memo,
     operations::Operation,
     transaction::Transaction,
-    Network, PublicKey, KeyPair,
+    Network, PublicKey,
 };
 use stellar_sdk::{types::Account, Keypair, Server};
 use types::*;
@@ -296,7 +297,10 @@ impl PiNetwork {
 
             Ok(payment_dto.identifier)
         } else {
-            Err(PiError::Message(format!("Error, message from API: {:?}", response.text().await)))
+            Err(PiError::Message(format!(
+                "Error, message from API: {:?}",
+                response.text().await
+            )))
         }
     }
 
@@ -354,9 +358,12 @@ impl PiNetwork {
             Some(options) => options.base_url.clone(),
             None => "https://api.minepi.com".to_string(),
         };
+
+        let body = json!({ "txid": tx_id });
+
         let response = client
-            .post(format!("{url}/v2/payments/{payment_id}/complete?txid={tx_id}"))
-            .body("{}")
+            .post(format!("{url}/v2/payments/{payment_id}/complete"))
+            .json(&body)
             .send()
             .await?;
 
@@ -367,7 +374,10 @@ impl PiNetwork {
 
             Ok(payment_dto)
         } else {
-            Err(PiError::Message(format!("Error, message from API: {:?}", response.text().await)))
+            Err(PiError::Message(format!(
+                "Error, message from API: {:?}",
+                response.text().await
+            )))
         }
     }
 
@@ -380,6 +390,31 @@ impl PiNetwork {
         };
         let response = client
             .get(format!("{url}/v2/payments/{payment_id}"))
+            .send()
+            .await?;
+
+        if response.status() == StatusCode::OK {
+            let response_data: Value = response.json().await?;
+            let payment: PaymentDTO = serde_json::from_value(response_data)?;
+
+            Ok(payment)
+        } else {
+            Err(PiError::Message(format!(
+                "Error, message from API: {:?}",
+                response.text().await
+            )))
+        }
+    }
+
+    /// This method required to approve the user payment created on the frontend, after the backend is approved the user can pay
+    pub async fn approve_payment(&mut self, payment_id: String) -> Result<PaymentDTO, PiError> {
+        let client = get_reqwest_client(self.api_key.clone());
+        let url = match &self.reqwest_options {
+            Some(options) => options.base_url.clone(),
+            None => "https://api.minepi.com".to_string(),
+        };
+        let response = client
+            .post(format!("{url}/v2/payments/{payment_id}/approve"))
             .body("{}")
             .send()
             .await?;
@@ -390,13 +425,15 @@ impl PiNetwork {
 
             Ok(payment)
         } else {
-            Err(PiError::Message(format!("Error, message from API: {:?}", response.text().await)))
+            Err(PiError::Message(format!(
+                "Error, message from API: {:?}",
+                response.text().await
+            )))
         }
     }
 
     /// This method cancels the payment in the Pi server.
-    pub async fn cancel_payment(&mut self, payment_id: String) -> Result<PaymentDTO, PiError> 
-    {
+    pub async fn cancel_payment(&mut self, payment_id: String) -> Result<PaymentDTO, PiError> {
         let client = get_reqwest_client(self.api_key.clone());
         let url = match &self.reqwest_options {
             Some(options) => options.base_url.clone(),
@@ -406,13 +443,17 @@ impl PiNetwork {
             .post(format!("{url}/v2/payments/{payment_id}/cancel"))
             .body("{}")
             .send()
-            .await.unwrap();
+            .await
+            .unwrap();
 
         if response.status() == StatusCode::OK {
             let response_data: PaymentDTO = response.json().await?;
             Ok(response_data)
         } else {
-            Err(PiError::Message(format!("Error, message from API: {:?}", response.text().await)))
+            Err(PiError::Message(format!(
+                "Error, message from API: {:?}",
+                response.text().await
+            )))
         }
     }
 
@@ -432,7 +473,6 @@ impl PiNetwork {
         };
         let response = client
             .get(format!("{url}/v2/payments/incomplete_server_payments"))
-            .body("{}")
             .send()
             .await?;
 
@@ -441,7 +481,10 @@ impl PiNetwork {
             let payment_vec: Vec<PaymentDTO> = response_data.incomplete_server_payments;
             Ok(payment_vec)
         } else {
-            Err(PiError::Message(format!("Error, message from API: {:?}", response.text().await)))
+            Err(PiError::Message(format!(
+                "Error, message from API: {:?}",
+                response.text().await
+            )))
         }
     }
 
@@ -496,7 +539,8 @@ impl PiNetwork {
         let base_fee = Stroops::new(base_fee_i64);
 
         let amount_str = transaction_data.amount.clone().to_string();
-        let destination_account_public_key = PublicKey::from_account_id(&transaction_data.to_address.clone());
+        let destination_account_public_key =
+            PublicKey::from_account_id(&transaction_data.to_address.clone());
         let destination_account_muxed: MuxedAccount = match destination_account_public_key {
             Ok(account) => account.into(),
             Err(e) => {
@@ -506,7 +550,7 @@ impl PiNetwork {
                 )));
             }
         };
-        
+
         let payment_operation = Operation::new_payment()
             .with_destination(destination_account_muxed.clone())
             .with_amount(Amount::from_str(&amount_str).unwrap())
@@ -514,19 +558,19 @@ impl PiNetwork {
             .with_asset(Asset::new_native())
             .build()
             .unwrap();
-       
+
         let sequence = my_account.sequence.clone().parse::<i64>().unwrap() + 1; // Getting the current sequence of the account and adding 1 to it
 
-        let source_account_keypair: KeyPair = self.my_key_pair.clone().into();
+        let source_account_keypair: SodiumKeyPair = self.my_key_pair.clone().into();
         let source_account_public_key = source_account_keypair.public_key();
         let source_account_muxed: MuxedAccount = source_account_public_key.clone().into();
-       
+
         let mut transaction = Transaction::builder(source_account_muxed, sequence, base_fee)
             .with_memo(Memo::Text(transaction_data.payment_identifier.clone()))
             .add_operation(payment_operation)
             .into_transaction()
             .unwrap();
-      
+
         // If the user gave us the network passphrase we are using that if he not then going with testnet as default
         let network_passphrase_enum: NetworkPassphrase = match &self.network_passphrase {
             Some(passphrase) => passphrase.clone(),
@@ -535,7 +579,7 @@ impl PiNetwork {
 
         // Signing the transaction
         let _ = transaction.sign(
-            &source_account_keypair,
+            &source_account_keypair.as_ref(),
             &Network::new(PiNetwork::get_network_passphrase(network_passphrase_enum).await),
         );
         Ok(transaction)

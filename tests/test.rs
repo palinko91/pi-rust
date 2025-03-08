@@ -1,4 +1,3 @@
-
 #[cfg(test)]
 mod tests {
     use pi_rust::{types::*, PiNetwork};
@@ -8,10 +7,10 @@ mod tests {
     fn setup() -> PiNetwork {
         dotenvy::dotenv().expect("Failed to load the env file");
         let pi_api_key: String = env::var("PI_API_KEY").expect("PI_API_KEY must be set");
-        let wallet_private_seed: String = env::var("WALLET_PRIVATE_SEED").expect("WALLET_PRIVATE_SEED must be set");
+        let wallet_private_seed: String =
+            env::var("WALLET_PRIVATE_SEED").expect("WALLET_PRIVATE_SEED must be set");
         PiNetwork::new(pi_api_key, wallet_private_seed, None, None).unwrap()
     }
-
 
     #[tokio::test]
     async fn test_combined() {
@@ -21,22 +20,28 @@ mod tests {
 
         println!("Complete payment test");
         let payment_data = PaymentArgs {
-        amount: 0.1,
-        memo: "Refund for apple pie".to_string(),
-        metadata: json!({"productId": "apple-pie-1"}),
-        uid: user_uid.clone()
+            amount: 0.1,
+            memo: "Refund for apple pie".to_string(),
+            metadata: json!({"productId": "apple-pie-1"}),
+            uid: user_uid.clone(),
         };
 
         let payment_id = pi.create_payment(payment_data.clone()).await.unwrap();
         let submit_payment_txid = pi.submit_payment(payment_id.clone()).await.unwrap();
-        let complete_payment = pi.complete_payment(payment_id.clone(), submit_payment_txid).await.unwrap();
+        let complete_payment = pi
+            .complete_payment(payment_id.clone(), submit_payment_txid)
+            .await
+            .unwrap();
 
         assert_eq!(complete_payment.identifier, payment_id);
 
         println!("Cancel payment test");
         let payment_id2 = pi.create_payment(payment_data.clone()).await.unwrap();
 
-        let get_payment2 = pi.get_payment(payment_id2.clone().to_string()).await.unwrap();
+        let get_payment2 = pi
+            .get_payment(payment_id2.clone().to_string())
+            .await
+            .unwrap();
 
         let cancel_payment2 = pi.cancel_payment(payment_id2).await.unwrap();
         assert_eq!(get_payment2.identifier, cancel_payment2.identifier);
@@ -46,7 +51,7 @@ mod tests {
             amount: 2.1,
             memo: "Refund for apple pie".to_string(),
             metadata: json!({"productId": "apple-pie-1"}),
-            uid: user_uid.clone()
+            uid: user_uid.clone(),
         };
 
         let payment_id3 = pi.create_payment(payment_data2.clone()).await.unwrap();
