@@ -13,13 +13,28 @@ keywords = ["pi", "pinetwork", "backend", "crypto", "token"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = ["nacl"]
+nacl=["dep:nacl"]
+
 [dependencies]
 stellar-base = "0.6"
-stellar_sdk = { path = "./stellar-sdk" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 reqwest = { version = "0.12", features = ["json"] }
 anyhow = "1"
+
+# stellar-sdk dependencies
+ureq = "2.4.0"
+crc = "3.0.0"
+byteorder = "1.4.3"
+data-encoding = "2.3.2"
+nacl = {version="0.5.3", optional=true}
+rand = "0.8.4"
+toml = "0.5.9"
+regex = "1.5.6"
+chrono = "0.4"
+sodiumoxide = "0.2.7"
 
 [dev-dependencies]
 dotenvy = "0.15"

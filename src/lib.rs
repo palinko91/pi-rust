@@ -198,6 +198,7 @@
 //! See documentation for the `get_incomplete_server_payments` above.
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+pub mod stellar_sdk;
 pub mod types;
 use reqwest::{header, Client, StatusCode};
 use serde_json::{json, Value};
@@ -212,7 +213,10 @@ use stellar_base::{
     transaction::Transaction,
     Network, PublicKey,
 };
-use stellar_sdk::{types::Account, Keypair, Server};
+use stellar_sdk::{
+    lib::{Keypair, Server},
+    types::Account,
+};
 use types::*;
 
 /// Creating the reqwest client for the api call with the necessary header authentication
