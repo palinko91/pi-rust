@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Serializer};
 use serde_json::Value;
 use std::num::ParseIntError;
 
@@ -154,6 +154,23 @@ impl std::fmt::Display for PiError {
             PiError::Anyhow(ref err) => write!(f, "Horizon error: {}", err),
             PiError::ParseError(ref err) => write!(f, "Can't parse: {}", err),
         }
+    }
+}
+
+impl Serialize for PiError {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let error_message = match self {
+            PiError::Message(msg) => msg.clone(),
+            PiError::Reqwest(err) => err.to_string(),
+            PiError::Json(err) => err.to_string(),
+            PiError::Anyhow(err) => err.to_string(),
+            PiError::ParseError(err) => err.to_string(),
+        };
+
+        serializer.serialize_str(&error_message)
     }
 }
 
